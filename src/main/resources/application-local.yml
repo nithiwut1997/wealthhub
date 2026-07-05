@@ -1,0 +1,22 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://localhost:5432/wealthhub
+        username: wealthhub
+        password: password
+        driver-class-name: org.postgresql.Driver
+
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        open-in-view: false
+        properties:
+            hibernate:
+                format_sql: true
+
+    liquibase:
+        enabled: true
+        change-log: classpath:db/changelog/db.changelog-master.yml
+
+logging:
+    level:
+        org.springframework.jdbc: INFO
