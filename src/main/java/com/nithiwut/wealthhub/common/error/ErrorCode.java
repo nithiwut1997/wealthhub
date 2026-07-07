@@ -8,9 +8,11 @@ public enum ErrorCode {
     PORTFOLIO_NOT_FOUND(HttpStatus.NOT_FOUND),
 
     HOLDING_NOT_FOUND(HttpStatus.NOT_FOUND),
+    DUPLICATE_HOLDING(HttpStatus.CONFLICT),
 
     ASSET_NOT_FOUND(HttpStatus.NOT_FOUND),
-    DUPLICATE_HOLDING(HttpStatus.CONFLICT),
+    DUPLICATE_ASSET(HttpStatus.CONFLICT),
+
     INVALID_REQUEST(HttpStatus.BAD_REQUEST);
 
     private final HttpStatus status;
