@@ -8,6 +8,7 @@ public enum ErrorCode {
     PORTFOLIO_NOT_FOUND(HttpStatus.NOT_FOUND),
 
     HOLDING_NOT_FOUND(HttpStatus.NOT_FOUND),
+
     ASSET_NOT_FOUND(HttpStatus.NOT_FOUND),
     DUPLICATE_HOLDING(HttpStatus.CONFLICT),
     INVALID_REQUEST(HttpStatus.BAD_REQUEST);
