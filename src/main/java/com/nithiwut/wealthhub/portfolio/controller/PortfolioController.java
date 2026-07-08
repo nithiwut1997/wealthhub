@@ -2,6 +2,7 @@ package com.nithiwut.wealthhub.portfolio.controller;
 
 import com.nithiwut.wealthhub.portfolio.dto.request.CreatePortfolioRequest;
 import com.nithiwut.wealthhub.portfolio.dto.response.PortfolioResponse;
+import com.nithiwut.wealthhub.portfolio.dto.response.PortfolioSummaryResponse;
 import com.nithiwut.wealthhub.portfolio.service.PortfolioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,5 +31,10 @@ public class PortfolioController {
     @GetMapping
     public List<PortfolioResponse> getAllPortfolios() {
         return portfolioService.getAllPortfolios();
+    }
+
+    @GetMapping("/{id}/summary")
+    public PortfolioSummaryResponse getPortfolioSummary(@PathVariable Long id) {
+        return portfolioService.getPortfolioSummary(id);
     }
 }

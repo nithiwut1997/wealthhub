@@ -62,6 +62,6 @@ public class AssetService {
     }
 
     private String normalizeText(String text) {
-        return text.toUpperCase().trim();
+        return text.trim().toUpperCase();
     }
 }
