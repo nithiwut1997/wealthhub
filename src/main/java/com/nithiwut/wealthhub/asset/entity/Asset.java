@@ -27,8 +27,13 @@ public class Asset {
     @Column(nullable = false, length = 20)
     private String market;
 
-    @Column(nullable = false, length = 20)
-    private String assetType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "asset_type", nullable = false, length = 20)
+    @Builder.Default
+    private AssetType type = AssetType.STOCK;
+
+    @Column(name = "external_id", length = 100)
+    private String externalId;
 
     @Column(nullable = false, length = 3)
     private String currency;

@@ -33,4 +33,9 @@ public class AssetPriceController {
     public AssetPriceResponse getLatestAssetPrice(@PathVariable Long assetId) {
         return assetPriceService.getLatestAssetPrice(assetId);
     }
+
+    @PostMapping("/refresh")
+    public AssetPriceResponse refreshAssetPrice(@PathVariable Long assetId) {
+        return assetPriceService.refreshAssetPrice(assetId);
+    }
 }

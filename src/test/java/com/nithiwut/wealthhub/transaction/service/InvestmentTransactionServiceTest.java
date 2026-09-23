@@ -53,7 +53,7 @@ class InvestmentTransactionServiceTest {
             portfolioRepository, assetRepository, holdingRepository, transactionRepository);
         portfolio = Portfolio.builder().id(1L).name("Retirement").baseCurrency("THB").build();
         asset = Asset.builder().id(2L).symbol("AAPL").name("Apple").market("NASDAQ")
-            .assetType("STOCK").currency("USD").build();
+            .currency("USD").build();
         lenient().when(transactionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 

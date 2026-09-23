@@ -34,7 +34,7 @@ class AssetPriceServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AssetPriceService(assetRepository, priceRepository);
+        service = new AssetPriceService(assetRepository, priceRepository, null);
         asset = Asset.builder().id(4L).symbol("PTT").currency("THB").build();
     }
 

@@ -1,5 +1,7 @@
 package com.nithiwut.wealthhub.asset.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.nithiwut.wealthhub.asset.entity.AssetType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -16,12 +18,14 @@ public record CreateAssetRequest(
     @Size(max = 20)
     String market,
 
-    @NotBlank
-    @Size(max = 20)
-    String assetType,
+    @JsonAlias("assetType")
+    AssetType type,
 
     @NotBlank
     @Size(min = 3, max = 3)
-    String currency
+    String currency,
+
+    @Size(max = 100)
+    String externalId
 ) {
 }
