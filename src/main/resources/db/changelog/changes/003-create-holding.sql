@@ -17,3 +17,5 @@ CREATE TABLE holding (
 
 CREATE INDEX idx_holding_portfolio ON holding(portfolio_id);
 CREATE INDEX idx_holding_asset ON holding(asset_id);
+
+-- rollback DROP TABLE holding;
