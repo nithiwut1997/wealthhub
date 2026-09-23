@@ -7,3 +7,5 @@ databaseChangeLog:
         file: db/changelog/changes/003-create-holding.sql
     - include:
         file: db/changelog/changes/004-create-asset-price.sql
+    - include:
+        file: db/changelog/changes/005-create-investment-transaction.sql

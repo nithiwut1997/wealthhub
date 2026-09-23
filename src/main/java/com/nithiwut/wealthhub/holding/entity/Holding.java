@@ -42,4 +42,9 @@ public class Holding {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updatePosition(BigDecimal quantity, BigDecimal averageCost) {
+        this.quantity = quantity;
+        this.averageCost = averageCost;
+    }
 }
