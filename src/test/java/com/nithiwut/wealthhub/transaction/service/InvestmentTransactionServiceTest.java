@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -102,7 +104,10 @@ class InvestmentTransactionServiceTest {
 
         service.createTransaction(request(TransactionType.SELL, "5", "150"));
 
-        verify(holdingRepository).deleteClosedPosition(1L, 2L);
+        InOrder mutationBeforeLedger = inOrder(holdingRepository, transactionRepository);
+        mutationBeforeLedger.verify(holdingRepository).applySell(1L, 2L, new BigDecimal("5"));
+        mutationBeforeLedger.verify(holdingRepository).deleteClosedPosition(1L, 2L);
+        mutationBeforeLedger.verify(transactionRepository).save(any(InvestmentTransaction.class));
     }
 
     @Test

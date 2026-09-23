@@ -46,6 +46,8 @@ public interface HoldingRepository extends JpaRepository<Holding, Long> {
         @Param("sellQuantity") BigDecimal sellQuantity
     );
 
+    // applySell retains PostgreSQL's row lock until the surrounding transaction ends.
+    // Consequently this delete cannot remove a position updated by a concurrent BUY.
     @Modifying(flushAutomatically = true)
     @Query(value = """
         DELETE FROM holding
