@@ -8,8 +8,9 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
-public interface HoldingRepository extends JpaRepository<Holding, Long> {
+public interface HoldingRepository extends JpaRepository<Holding, Long>, HoldingRepositoryCustom {
     boolean existsByPortfolioIdAndAssetId(Long portfolioId, Long assetId);
 
     @Modifying(flushAutomatically = true)
@@ -31,20 +32,12 @@ public interface HoldingRepository extends JpaRepository<Holding, Long> {
         @Param("buyPrice") BigDecimal buyPrice
     );
 
-    @Modifying(flushAutomatically = true)
-    @Query(value = """
-        UPDATE holding
-        SET quantity = quantity - :sellQuantity,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE portfolio_id = :portfolioId
-          AND asset_id = :assetId
-          AND quantity >= :sellQuantity
-        """, nativeQuery = true)
-    int applySell(
-        @Param("portfolioId") Long portfolioId,
-        @Param("assetId") Long assetId,
-        @Param("sellQuantity") BigDecimal sellQuantity
-    );
+    /**
+     * Atomically reduces the position and returns the average cost from the row
+     * that was updated. An empty result means that no sufficiently large
+     * position existed.
+     */
+    Optional<BigDecimal> applySell(Long portfolioId, Long assetId, BigDecimal sellQuantity);
 
     // applySell retains PostgreSQL's row lock until the surrounding transaction ends.
     // Consequently this delete cannot remove a position updated by a concurrent BUY.
