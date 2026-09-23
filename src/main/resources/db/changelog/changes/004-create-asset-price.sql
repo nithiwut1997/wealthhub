@@ -10,3 +10,5 @@ CREATE TABLE asset_price (
 
     CONSTRAINT fk_asset_price_asset FOREIGN KEY (asset_id) REFERENCES asset(id)
 );
+
+-- rollback DROP TABLE asset_price;

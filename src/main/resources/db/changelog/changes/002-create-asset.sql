@@ -15,3 +15,5 @@ CREATE TABLE asset (
 );
 
 CREATE UNIQUE INDEX uk_asset_symbol_market ON asset(symbol, market);
+
+-- rollback DROP TABLE asset;

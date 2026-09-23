@@ -11,3 +11,5 @@ CREATE TABLE portfolio (
 );
 
 CREATE UNIQUE INDEX uk_portfolio_name ON portfolio(name);
+
+-- rollback DROP TABLE portfolio;
