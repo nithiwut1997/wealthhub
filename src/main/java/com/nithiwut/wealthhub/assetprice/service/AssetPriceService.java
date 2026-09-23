@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 public class AssetPriceService {
@@ -21,7 +23,7 @@ public class AssetPriceService {
 
     @Transactional
     public AssetPriceResponse createAssetPrice(Long assetId, CreateAssetPriceRequest request) {
-        if (request.price() == null || request.price().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+        if (request.price() == null || request.price().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Price must be greater than zero");
         }
         if (request.pricedAt() == null) {
