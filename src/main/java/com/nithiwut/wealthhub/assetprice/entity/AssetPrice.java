@@ -41,6 +41,6 @@ public class AssetPrice {
     private LocalDateTime pricedAt;
 
     @CreationTimestamp
-    @Column(name = "updated_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }

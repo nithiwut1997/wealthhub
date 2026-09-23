@@ -3,6 +3,8 @@ package com.nithiwut.wealthhub.assetprice;
 import com.nithiwut.wealthhub.assetprice.entity.AssetPrice;
 import com.nithiwut.wealthhub.assetprice.repository.AssetPriceRepository;
 import jakarta.persistence.Column;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.repository.Query;
 
@@ -17,6 +19,20 @@ class AssetPricePersistenceContractTest {
         Column price = AssetPrice.class.getDeclaredField("price").getAnnotation(Column.class);
         assertThat(price.precision()).isEqualTo(20);
         assertThat(price.scale()).isEqualTo(8);
+    }
+
+    @Test
+    void entityColumnNamesMatchInitialMigration() throws Exception {
+        Table table = AssetPrice.class.getAnnotation(Table.class);
+        JoinColumn asset = AssetPrice.class.getDeclaredField("asset").getAnnotation(JoinColumn.class);
+        Column pricedAt = AssetPrice.class.getDeclaredField("pricedAt").getAnnotation(Column.class);
+        Column createdAt = AssetPrice.class.getDeclaredField("createdAt").getAnnotation(Column.class);
+
+        assertThat(table.name()).isEqualTo("asset_price");
+        assertThat(asset.name()).isEqualTo("asset_id");
+        assertThat(pricedAt.name()).isEqualTo("priced_at");
+        assertThat(createdAt.name()).isEqualTo("created_at");
+        assertThat(createdAt.updatable()).isFalse();
     }
 
     @Test
@@ -38,17 +54,23 @@ class AssetPricePersistenceContractTest {
     }
 
     @Test
-    void historyMigrationHasSupportingIndexConstraintAndRollback() throws Exception {
+    void initialAssetPriceMigrationCreatesHistorySchemaWithIndexConstraintAndRollback() throws Exception {
         String migration;
         try (var stream = getClass().getResourceAsStream(
-            "/db/changelog/changes/007-enable-asset-price-history.sql")) {
+            "/db/changelog/changes/004-create-asset-price.sql")) {
             assertThat(stream).isNotNull();
             migration = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
         }
         assertThat(normalize(migration))
+            .contains("id BIGSERIAL PRIMARY KEY")
+            .contains("asset_id BIGINT NOT NULL")
+            .contains("price NUMERIC(20,8) NOT NULL")
+            .contains("priced_at TIMESTAMP NOT NULL")
+            .contains("created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP")
             .contains("CHECK (price > 0)")
             .contains("ON asset_price(asset_id, priced_at DESC, id DESC)")
-            .contains("-- rollback DROP INDEX idx_asset_price_latest;");
+            .contains("-- rollback DROP TABLE asset_price;")
+            .doesNotContain("asset_id BIGINT PRIMARY KEY");
     }
 
     private String normalize(String value) {
