@@ -29,10 +29,10 @@ public class Holding {
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
-    @Column(nullable = false, precision = 19, scale = 6)
+    @Column(nullable = false, precision = 20, scale = 8)
     private BigDecimal quantity;
 
-    @Column(nullable = false, precision = 19, scale = 6)
+    @Column(nullable = false, precision = 20, scale = 8)
     private BigDecimal averageCost;
 
     @CreationTimestamp
@@ -42,4 +42,5 @@ public class Holding {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
 }
