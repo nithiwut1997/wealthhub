@@ -3,6 +3,7 @@ package com.nithiwut.wealthhub.asset.service;
 import com.nithiwut.wealthhub.asset.dto.request.CreateAssetRequest;
 import com.nithiwut.wealthhub.asset.dto.response.AssetResponse;
 import com.nithiwut.wealthhub.asset.entity.Asset;
+import com.nithiwut.wealthhub.asset.entity.AssetType;
 import com.nithiwut.wealthhub.asset.repository.AssetRepository;
 import com.nithiwut.wealthhub.common.error.ErrorCode;
 import com.nithiwut.wealthhub.common.exception.ConflictException;
@@ -30,8 +31,9 @@ public class AssetService {
                 .symbol(symbol)
                 .name(request.name())
                 .market(request.market())
-                .assetType(request.assetType())
+                .type(request.type() == null ? AssetType.STOCK : request.type())
                 .currency(normalizeText(request.currency()))
+                .externalId(normalizeNullable(request.externalId()))
                 .build();
         Asset savedAsset = assetRepository.save(asset);
         return toResponse(savedAsset);
@@ -55,13 +57,18 @@ public class AssetService {
                 asset.getSymbol(),
                 asset.getName(),
                 asset.getMarket(),
-                asset.getAssetType(),
+                asset.getType(),
                 asset.getCurrency(),
+                asset.getExternalId(),
                 asset.getIsActive()
         );
     }
 
     private String normalizeText(String text) {
         return text.trim().toUpperCase();
+    }
+
+    private String normalizeNullable(String text) {
+        return text == null || text.isBlank() ? null : text.trim();
     }
 }

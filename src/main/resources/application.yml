@@ -4,3 +4,10 @@ spring:
 
     profiles:
         active: local
+
+wealthhub:
+    market-data:
+        sec:
+            base-url: https://api.sec.or.th
+            api-key: ${SEC_API_KEY:}
+            lookup-days: 7
