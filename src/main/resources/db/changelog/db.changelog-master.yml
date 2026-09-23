@@ -11,3 +11,5 @@ databaseChangeLog:
         file: db/changelog/changes/005-create-investment-transaction.sql
     - include:
         file: db/changelog/changes/006-add-holding-portfolio-asset-unique-constraint.sql
+    - include:
+        file: db/changelog/changes/007-add-investment-transaction-realized-pnl.sql

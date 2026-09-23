@@ -21,11 +21,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class InvestmentTransactionService {
+    private static final int MONEY_SCALE = 8;
+    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
+
     private final PortfolioRepository portfolioRepository;
     private final AssetRepository assetRepository;
     private final HoldingRepository holdingRepository;
@@ -45,10 +49,11 @@ public class InvestmentTransactionService {
             throw new BadRequestException("Transaction type must not be null");
         }
 
+        BigDecimal realizedPnL = null;
         if (request.type() == TransactionType.BUY) {
             applyBuy(portfolio, asset, request.quantity(), request.price());
         } else {
-            applySell(portfolio, asset, request.quantity());
+            realizedPnL = applySell(portfolio, asset, request.quantity(), request.price());
         }
 
         InvestmentTransaction transaction = InvestmentTransaction.builder()
@@ -57,6 +62,7 @@ public class InvestmentTransactionService {
             .type(request.type())
             .quantity(request.quantity())
             .price(request.price())
+            .realizedPnL(realizedPnL)
             .build();
         return toResponse(transactionRepository.save(transaction));
     }
@@ -90,9 +96,16 @@ public class InvestmentTransactionService {
         }
     }
 
-    private void applySell(Portfolio portfolio, Asset asset, BigDecimal quantity) {
-        int updatedRows = holdingRepository.applySell(portfolio.getId(), asset.getId(), quantity);
-        if (updatedRows == 0) {
+    private BigDecimal applySell(
+        Portfolio portfolio,
+        Asset asset,
+        BigDecimal quantity,
+        BigDecimal price
+    ) {
+        BigDecimal averageCostBeforeSell = holdingRepository
+            .applySell(portfolio.getId(), asset.getId(), quantity)
+            .orElse(null);
+        if (averageCostBeforeSell == null) {
             if (!holdingRepository.existsByPortfolioIdAndAssetId(portfolio.getId(), asset.getId())) {
                 throw new NotFoundException(ErrorCode.HOLDING_NOT_FOUND,
                     "Holding not found for the portfolio and asset");
@@ -101,6 +114,9 @@ public class InvestmentTransactionService {
                 "Sell quantity exceeds available holding quantity");
         }
         holdingRepository.deleteClosedPosition(portfolio.getId(), asset.getId());
+        return price.subtract(averageCostBeforeSell)
+            .multiply(quantity)
+            .setScale(MONEY_SCALE, ROUNDING_MODE);
     }
 
     private void validatePositive(BigDecimal value, String fieldName) {
@@ -118,6 +134,7 @@ public class InvestmentTransactionService {
             transaction.getType(),
             transaction.getQuantity(),
             transaction.getPrice(),
+            transaction.getRealizedPnL(),
             transaction.getCreatedAt()
         );
     }

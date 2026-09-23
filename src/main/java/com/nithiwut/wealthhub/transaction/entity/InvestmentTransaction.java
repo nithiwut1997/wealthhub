@@ -51,6 +51,9 @@ public class InvestmentTransaction {
     @Column(nullable = false, precision = 20, scale = 8)
     private BigDecimal price;
 
+    @Column(name = "realized_pnl", precision = 20, scale = 8)
+    private BigDecimal realizedPnL;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

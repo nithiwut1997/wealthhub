@@ -13,6 +13,7 @@ public record TransactionResponse(
     TransactionType type,
     BigDecimal quantity,
     BigDecimal price,
+    BigDecimal realizedPnL,
     LocalDateTime createdAt
 ) {
 }

@@ -87,7 +87,7 @@ class InvestmentTransactionServiceTest {
     @Test
     void sellUsesAtomicConditionalUpdateAndChecksForClosedPosition() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.applySell(1L, 2L, new BigDecimal("5"))).thenReturn(1);
+        when(holdingRepository.applySell(1L, 2L, new BigDecimal("5"))).thenReturn(Optional.of(new BigDecimal("110")));
 
         service.createTransaction(request(TransactionType.SELL, "5", "150"));
 
@@ -99,7 +99,7 @@ class InvestmentTransactionServiceTest {
     @Test
     void sellEntirePositionDeletesHolding() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.applySell(1L, 2L, new BigDecimal("5"))).thenReturn(1);
+        when(holdingRepository.applySell(1L, 2L, new BigDecimal("5"))).thenReturn(Optional.of(new BigDecimal("110")));
         when(holdingRepository.deleteClosedPosition(1L, 2L)).thenReturn(1);
 
         service.createTransaction(request(TransactionType.SELL, "5", "150"));
@@ -113,7 +113,7 @@ class InvestmentTransactionServiceTest {
     @Test
     void sellGreaterThanAvailableIsRejectedWithoutSavingTransaction() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.applySell(1L, 2L, new BigDecimal("6"))).thenReturn(0);
+        when(holdingRepository.applySell(1L, 2L, new BigDecimal("6"))).thenReturn(Optional.empty());
         when(holdingRepository.existsByPortfolioIdAndAssetId(1L, 2L)).thenReturn(true);
 
         assertThatThrownBy(() -> service.createTransaction(request(TransactionType.SELL, "6", "120")))
@@ -125,7 +125,7 @@ class InvestmentTransactionServiceTest {
     @Test
     void sellWithoutHoldingIsRejected() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.applySell(1L, 2L, BigDecimal.ONE)).thenReturn(0);
+        when(holdingRepository.applySell(1L, 2L, BigDecimal.ONE)).thenReturn(Optional.empty());
         when(holdingRepository.existsByPortfolioIdAndAssetId(1L, 2L)).thenReturn(false);
 
         assertThatThrownBy(() -> service.createTransaction(request(TransactionType.SELL, "1", "120")))

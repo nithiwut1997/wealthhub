@@ -38,13 +38,14 @@ class HoldingPersistenceContractTest {
     }
 
     @Test
-    void sellUpdateIsConditionalAndCannotMakeQuantityNegative() throws NoSuchMethodException {
-        String sql = queryFor("applySell", Long.class, Long.class, BigDecimal.class);
+    void sellUpdateIsConditionalAndReturnsAverageCost() throws Exception {
+        String source = java.nio.file.Files.readString(java.nio.file.Path.of(
+            "src/main/java/com/nithiwut/wealthhub/holding/repository/HoldingRepositoryCustomImpl.java"));
 
-        assertThat(normalize(sql))
+        assertThat(normalize(source))
             .contains("quantity = quantity - :sellQuantity")
             .contains("quantity >= :sellQuantity")
-            .doesNotContain("average_cost");
+            .contains("RETURNING average_cost");
     }
 
     @Test
