@@ -8,6 +8,10 @@ public record HoldingResponse(
     String symbol,
     String name,
     BigDecimal quantity,
-    BigDecimal averageCost
+    BigDecimal averageCost,
+    BigDecimal latestPrice,
+    BigDecimal costBasis,
+    BigDecimal marketValue,
+    BigDecimal unrealizedPnL
 ) {
 }

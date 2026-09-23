@@ -38,7 +38,11 @@ class HoldingControllerTest {
                 "AAPL",
                 "Apple",
                 new BigDecimal("10.00000000"),
-                new BigDecimal("100.00000000")
+                new BigDecimal("100.00000000"),
+                new BigDecimal("150.00000000"),
+                new BigDecimal("1000.00000000"),
+                new BigDecimal("1500.00000000"),
+                new BigDecimal("500.00000000")
             )
         ));
 
@@ -48,7 +52,10 @@ class HoldingControllerTest {
             .andExpect(jsonPath("$[0].assetId").value(2))
             .andExpect(jsonPath("$[0].symbol").value("AAPL"))
             .andExpect(jsonPath("$[0].quantity").value(10.0))
-            .andExpect(jsonPath("$[0].averageCost").value(100.0));
+            .andExpect(jsonPath("$[0].averageCost").value(100.0))
+            .andExpect(jsonPath("$[0].latestPrice").value(150.0))
+            .andExpect(jsonPath("$[0].marketValue").value(1500.0))
+            .andExpect(jsonPath("$[0].unrealizedPnL").value(500.0));
 
         verify(holdingService).getHoldingsByPortfolioId(1L);
     }
