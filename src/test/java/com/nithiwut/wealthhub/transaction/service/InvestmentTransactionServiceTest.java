@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -57,58 +58,58 @@ class InvestmentTransactionServiceTest {
     @Test
     void firstBuyCreatesHolding() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.findByPortfolioIdAndAssetId(1L, 2L)).thenReturn(Optional.empty());
+        when(holdingRepository.applyBuy(1L, 2L, new BigDecimal("10"), new BigDecimal("100")))
+            .thenReturn(0);
 
         service.createTransaction(request(TransactionType.BUY, "10", "100"));
 
         ArgumentCaptor<Holding> holdingCaptor = ArgumentCaptor.forClass(Holding.class);
-        verify(holdingRepository).save(holdingCaptor.capture());
+        verify(holdingRepository).saveAndFlush(holdingCaptor.capture());
         assertThat(holdingCaptor.getValue().getQuantity()).isEqualByComparingTo("10");
         assertThat(holdingCaptor.getValue().getAverageCost()).isEqualByComparingTo("100");
         verify(transactionRepository).save(any(InvestmentTransaction.class));
     }
 
     @Test
-    void secondBuyCalculatesWeightedAverageCost() {
-        Holding holding = holding("10", "100");
+    void secondBuyUsesAtomicWeightedAverageUpdate() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.findByPortfolioIdAndAssetId(1L, 2L)).thenReturn(Optional.of(holding));
+        when(holdingRepository.applyBuy(1L, 2L, new BigDecimal("5"), new BigDecimal("130")))
+            .thenReturn(1);
 
         service.createTransaction(request(TransactionType.BUY, "5", "130"));
 
-        assertThat(holding.getQuantity()).isEqualByComparingTo("15");
-        assertThat(holding.getAverageCost()).isEqualByComparingTo("110.00000000");
+        verify(holdingRepository).applyBuy(1L, 2L, new BigDecimal("5"), new BigDecimal("130"));
+        verify(holdingRepository, never()).saveAndFlush(any());
     }
 
     @Test
-    void sellDecreasesQuantityAndKeepsAverageCost() {
-        Holding holding = holding("15", "110");
+    void sellUsesAtomicConditionalUpdateAndChecksForClosedPosition() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.findByPortfolioIdAndAssetId(1L, 2L)).thenReturn(Optional.of(holding));
+        when(holdingRepository.applySell(1L, 2L, new BigDecimal("5"))).thenReturn(1);
 
         service.createTransaction(request(TransactionType.SELL, "5", "150"));
 
-        assertThat(holding.getQuantity()).isEqualByComparingTo("10");
-        assertThat(holding.getAverageCost()).isEqualByComparingTo("110");
-        verify(holdingRepository, never()).delete(any());
+        verify(holdingRepository).applySell(1L, 2L, new BigDecimal("5"));
+        verify(holdingRepository).deleteClosedPosition(1L, 2L);
+        verify(transactionRepository).save(any(InvestmentTransaction.class));
     }
 
     @Test
     void sellEntirePositionDeletesHolding() {
-        Holding holding = holding("5", "110");
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.findByPortfolioIdAndAssetId(1L, 2L)).thenReturn(Optional.of(holding));
+        when(holdingRepository.applySell(1L, 2L, new BigDecimal("5"))).thenReturn(1);
+        when(holdingRepository.deleteClosedPosition(1L, 2L)).thenReturn(1);
 
         service.createTransaction(request(TransactionType.SELL, "5", "150"));
 
-        verify(holdingRepository).delete(holding);
+        verify(holdingRepository).deleteClosedPosition(1L, 2L);
     }
 
     @Test
     void sellGreaterThanAvailableIsRejectedWithoutSavingTransaction() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.findByPortfolioIdAndAssetId(1L, 2L))
-            .thenReturn(Optional.of(holding("5", "100")));
+        when(holdingRepository.applySell(1L, 2L, new BigDecimal("6"))).thenReturn(0);
+        when(holdingRepository.existsByPortfolioIdAndAssetId(1L, 2L)).thenReturn(true);
 
         assertThatThrownBy(() -> service.createTransaction(request(TransactionType.SELL, "6", "120")))
             .isInstanceOf(ApiException.class)
@@ -119,7 +120,8 @@ class InvestmentTransactionServiceTest {
     @Test
     void sellWithoutHoldingIsRejected() {
         prepareExistingPortfolioAndAsset();
-        when(holdingRepository.findByPortfolioIdAndAssetId(1L, 2L)).thenReturn(Optional.empty());
+        when(holdingRepository.applySell(1L, 2L, BigDecimal.ONE)).thenReturn(0);
+        when(holdingRepository.existsByPortfolioIdAndAssetId(1L, 2L)).thenReturn(false);
 
         assertThatThrownBy(() -> service.createTransaction(request(TransactionType.SELL, "1", "120")))
             .isInstanceOf(ApiException.class)
@@ -128,11 +130,24 @@ class InvestmentTransactionServiceTest {
     }
 
     @Test
+    void competingFirstBuyFailsCleanlyWithoutRecordingTransaction() {
+        prepareExistingPortfolioAndAsset();
+        when(holdingRepository.applyBuy(1L, 2L, BigDecimal.ONE, new BigDecimal("100"))).thenReturn(0);
+        when(holdingRepository.saveAndFlush(any(Holding.class)))
+            .thenThrow(new DataIntegrityViolationException("unique constraint"));
+
+        assertThatThrownBy(() -> service.createTransaction(request(TransactionType.BUY, "1", "100")))
+            .isInstanceOf(ApiException.class)
+            .extracting("errorCode").isEqualTo(ErrorCode.DUPLICATE_HOLDING);
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
     void invalidQuantityIsRejectedBeforeAnyWrite() {
         assertThatThrownBy(() -> service.createTransaction(request(TransactionType.BUY, "0", "100")))
             .isInstanceOf(ApiException.class)
             .extracting("errorCode").isEqualTo(ErrorCode.INVALID_REQUEST);
-        verify(holdingRepository, never()).save(any());
+        verify(holdingRepository, never()).applyBuy(any(), any(), any(), any());
         verify(transactionRepository, never()).save(any());
     }
 
@@ -141,7 +156,7 @@ class InvestmentTransactionServiceTest {
         assertThatThrownBy(() -> service.createTransaction(request(TransactionType.BUY, "1", "-1")))
             .isInstanceOf(ApiException.class)
             .extracting("errorCode").isEqualTo(ErrorCode.INVALID_REQUEST);
-        verify(holdingRepository, never()).save(any());
+        verify(holdingRepository, never()).applyBuy(any(), any(), any(), any());
         verify(transactionRepository, never()).save(any());
     }
 
@@ -199,11 +214,6 @@ class InvestmentTransactionServiceTest {
     private CreateTransactionRequest request(TransactionType type, String quantity, String price) {
         return new CreateTransactionRequest(
             1L, 2L, type, new BigDecimal(quantity), new BigDecimal(price));
-    }
-
-    private Holding holding(String quantity, String averageCost) {
-        return Holding.builder().id(3L).portfolio(portfolio).asset(asset)
-            .quantity(new BigDecimal(quantity)).averageCost(new BigDecimal(averageCost)).build();
     }
 
     private InvestmentTransaction transaction(Long id, LocalDateTime createdAt) {
