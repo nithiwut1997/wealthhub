@@ -2,8 +2,9 @@
 
 -- changeset nithiwut:008-add-asset-type-and-external-id
 
--- Assets created before typed market data support represented stocks.
-UPDATE asset SET asset_type = 'STOCK';
+-- asset_type has been NOT NULL since table creation. Preserve all existing
+-- values rather than silently reclassifying assets; the constraint below will
+-- surface any unsupported legacy value for explicit data cleanup.
 
 ALTER TABLE asset
     ALTER COLUMN asset_type SET DEFAULT 'STOCK',

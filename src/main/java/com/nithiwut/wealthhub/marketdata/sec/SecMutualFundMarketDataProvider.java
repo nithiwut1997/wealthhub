@@ -81,9 +81,10 @@ public class SecMutualFundMarketDataProvider implements MarketDataProvider {
             throw malformed("SEC returned a NAV without a valuation date", asset);
         }
         try {
-            LocalDate navDate = LocalDate.parse(response.navDate().substring(0, 10));
+            // Parse only the documented date value; do not guess at alternate timestamp formats.
+            LocalDate navDate = LocalDate.parse(response.navDate());
             return new MarketPrice(response.nav(), navDate.atStartOfDay());
-        } catch (DateTimeParseException | IndexOutOfBoundsException exception) {
+        } catch (DateTimeParseException exception) {
             throw malformed("SEC returned an invalid NAV valuation date", asset);
         }
     }
