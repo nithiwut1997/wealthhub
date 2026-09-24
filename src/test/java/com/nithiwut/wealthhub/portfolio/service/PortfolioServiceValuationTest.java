@@ -60,17 +60,43 @@ class PortfolioServiceValuationTest {
         assertThat(summary.totalMarketValue()).isEqualByComparingTo("2250.00000000");
         assertThat(summary.unrealizedGainLoss()).isEqualByComparingTo("600.00000000");
         assertThat(summary.unrealizedGainLossPercent()).isEqualByComparingTo("36.3600");
+        assertThat(summary.pricedHoldingCount()).isEqualTo(1);
+        assertThat(summary.missingPriceCount()).isZero();
     }
 
     @Test
-    void failsExplicitlyWhenAHoldingHasNoPrice() {
+    void missingPriceKeepsCostButDoesNotTreatHoldingAsZeroValue() {
+        Asset unpricedAsset = Asset.builder().id(5L).symbol("CPALL").currency("THB").build();
+        Holding unpricedHolding = Holding.builder().portfolio(portfolio).asset(unpricedAsset)
+            .quantity(BigDecimal.TEN).averageCost(new BigDecimal("60")).build();
+        when(holdingRepository.findByPortfolioId(1L)).thenReturn(List.of(holding, unpricedHolding));
+        when(priceRepository.findLatestByAssetIds(List.of(2L, 5L)))
+            .thenReturn(List.of(price(asset, 10L, "150")));
+
+        var summary = service.getPortfolioSummary(1L);
+
+        assertThat(summary.totalCost()).isEqualByComparingTo("2250.00000000");
+        assertThat(summary.totalMarketValue()).isEqualByComparingTo("2250.00000000");
+        assertThat(summary.unrealizedGainLoss()).isEqualByComparingTo("600.00000000");
+        assertThat(summary.unrealizedGainLossPercent()).isEqualByComparingTo("36.3600");
+        assertThat(summary.holdingCount()).isEqualTo(2);
+        assertThat(summary.pricedHoldingCount()).isEqualTo(1);
+        assertThat(summary.missingPriceCount()).isEqualTo(1);
+    }
+
+    @Test
+    void allMissingPricesReturnZeroValuation() {
         when(holdingRepository.findByPortfolioId(1L)).thenReturn(List.of(holding));
         when(priceRepository.findLatestByAssetIds(List.of(2L))).thenReturn(List.of());
 
-        assertThatThrownBy(() -> service.getPortfolioSummary(1L))
-            .isInstanceOf(ApiException.class)
-            .hasMessageContaining("PTT")
-            .extracting("errorCode").isEqualTo(ErrorCode.ASSET_PRICE_NOT_FOUND);
+        var summary = service.getPortfolioSummary(1L);
+
+        assertThat(summary.totalCost()).isEqualByComparingTo("1650.00000000");
+        assertThat(summary.totalMarketValue()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(summary.unrealizedGainLoss()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(summary.unrealizedGainLossPercent()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(summary.pricedHoldingCount()).isZero();
+        assertThat(summary.missingPriceCount()).isEqualTo(1);
     }
 
     @Test
@@ -115,6 +141,9 @@ class PortfolioServiceValuationTest {
 
         assertThat(summary.totalCost()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(summary.totalMarketValue()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(summary.holdingCount()).isZero();
+        assertThat(summary.pricedHoldingCount()).isZero();
+        assertThat(summary.missingPriceCount()).isZero();
         verify(priceRepository, never()).findLatestByAssetIds(anyCollection());
     }
 
