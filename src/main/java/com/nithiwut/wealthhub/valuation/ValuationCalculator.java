@@ -15,8 +15,16 @@ public final class ValuationCalculator {
         BigDecimal averageCost,
         BigDecimal latestPrice
     ) {
-        BigDecimal costBasis = quantity.multiply(averageCost).setScale(MONEY_SCALE, ROUNDING_MODE);
-        BigDecimal marketValue = quantity.multiply(latestPrice).setScale(MONEY_SCALE, ROUNDING_MODE);
+        BigDecimal costBasis = costBasis(quantity, averageCost);
+        BigDecimal marketValue = marketValue(quantity, latestPrice);
         return new HoldingValuation(costBasis, marketValue, marketValue.subtract(costBasis));
+    }
+
+    public static BigDecimal costBasis(BigDecimal quantity, BigDecimal averageCost) {
+        return quantity.multiply(averageCost).setScale(MONEY_SCALE, ROUNDING_MODE);
+    }
+
+    public static BigDecimal marketValue(BigDecimal quantity, BigDecimal latestPrice) {
+        return quantity.multiply(latestPrice).setScale(MONEY_SCALE, ROUNDING_MODE);
     }
 }

@@ -8,6 +8,8 @@ public record PortfolioSummaryResponse(
     String portfolioName,
     String baseCurrency,
     Integer holdingCount,
+    Integer pricedHoldingCount,
+    Integer missingPriceCount,
     BigDecimal totalCost,
     BigDecimal totalMarketValue,
     BigDecimal unrealizedGainLoss,

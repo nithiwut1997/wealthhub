@@ -56,6 +56,9 @@ public interface HoldingRepository extends JpaRepository<Holding, Long>, Holding
     @Query("SELECT h FROM Holding h JOIN FETCH h.asset WHERE h.portfolio.id = :portfolioId")
     List<Holding> findByPortfolioId(@Param("portfolioId") Long portfolioId);
 
+    @Query("SELECT h FROM Holding h JOIN FETCH h.portfolio JOIN FETCH h.asset")
+    List<Holding> findAllWithPortfolioAndAsset();
+
     @Query("SELECT COALESCE(SUM(h.quantity * h.averageCost), 0) FROM Holding h")
     BigDecimal getTotalHoldingCost();
 }
